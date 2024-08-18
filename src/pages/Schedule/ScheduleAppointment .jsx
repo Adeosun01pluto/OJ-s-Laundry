@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
 const ScheduleAppointment = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,6 +13,7 @@ const ScheduleAppointment = () => {
     time: '',
     pickupOption: 'dropOff',
     address: '',
+    status: 'pending',
     globalServiceType: '',
     items: [{ type: '', quantity: '', serviceType: '' }],
     specialInstructions: '',
@@ -42,7 +45,21 @@ const ScheduleAppointment = () => {
 
     fetchPricing();
   }, [db]);
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    console.log(user);
 
+    if (user) {
+      setFormData(prevData => ({
+        ...prevData,
+        name: user.displayName || '',
+        email: user.email || '',
+        phone: user.phoneNumber || '', // Assuming phone number is available
+        // Optionally, you might want to initialize items differently if needed
+      }));
+    }
+  }, []);
   const handleGlobalServiceTypeChange = (e) => {
     const newServiceType = e.target.value;
 
@@ -144,6 +161,9 @@ const ScheduleAppointment = () => {
     try {
       await addDoc(collection(db, 'orders'), orderData);
       console.log('Order saved successfully');
+      window.alert('Your order has been placed successfully!');
+      navigate('/dashboard/orders');
+
     } catch (error) {
       console.error('Error saving order:', error);
     }
@@ -227,7 +247,6 @@ const ScheduleAppointment = () => {
                         Phone
                       </label>
                     </div>
-
                     <div className="relative">
                       <input
                         type="date"
@@ -236,6 +255,7 @@ const ScheduleAppointment = () => {
                         onChange={handleChange}
                         className="peer placeholder-transparent h-10 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-[#275C9E]"
                         placeholder="Date"
+                        min={new Date().toISOString().split("T")[0]} // Ensures the date cannot be set in the past
                         required
                       />
                       <label className="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 transition-all peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
@@ -251,6 +271,7 @@ const ScheduleAppointment = () => {
                         onChange={handleChange}
                         className="peer placeholder-transparent h-10 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-[#275C9E]"
                         placeholder="Time"
+                        min={formData.date === new Date().toISOString().split("T")[0] ? new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5) : undefined}
                         required
                       />
                       <label className="absolute left-0 -top-3.5 text-gray-600 text-sm peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 transition-all peer-focus:-top-3.5 peer-focus:text-gray-600 peer-focus:text-sm">
@@ -322,7 +343,7 @@ const ScheduleAppointment = () => {
 
                     <div className="relative">
                       <label className="block text-gray-700">Items:</label>
-                      {formData.items.map((item, index) => (
+                      {Array.isArray(formData.items) && formData.items.map((item, index) => (
                         <div key={index} className="flex space-x-4 mb-2">
                           <select
                             name="type"

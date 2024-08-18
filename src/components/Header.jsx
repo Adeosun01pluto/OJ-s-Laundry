@@ -39,7 +39,7 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="relative shadow-md md:p-0 px-4">
+    <header className="relative shadow-md md:p-0 px-4 bg-white ">
       <div className="container text-white py-4 md:py-6 bg-transparent mx-auto flex justify-between md:items-center">
         {/* Logo Section */}
         <Link to="/" className="text-[#275C9E] text-2xl md:text-3xl font-bold flex items-center">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { db } from '../../firebase'; 
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { FaSearch, FaSort, FaTimes } from 'react-icons/fa';
+import { ThreeDots } from 'react-loader-spinner'; // Import the ThreeDots spinner
 
 function Customers() {
   const [users, setUsers] = useState([]);
@@ -10,6 +11,8 @@ function Customers() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState({ isOpen: false, userId: null, action: null });
+  const [loading, setLoading] = useState(true); // Loading state for fetching users
+  const [actionLoading, setActionLoading] = useState(false); // Loading state for actions (block/delete)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -20,6 +23,8 @@ function Customers() {
         setUsers(usersList);
       } catch (error) {
         console.error('Error fetching users:', error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching
       }
     };
 
@@ -35,6 +40,7 @@ function Customers() {
   };
 
   const handleConfirmAction = async () => {
+    setActionLoading(true); // Set actionLoading to true while performing action
     const { userId, action } = confirmAction;
     try {
       const userDoc = doc(db, 'users', userId);
@@ -49,6 +55,8 @@ function Customers() {
       setIsDialogOpen(false);
     } catch (error) {
       console.error(`Error performing ${action} action:`, error);
+    } finally {
+      setActionLoading(false); // Set actionLoading to false after performing action
     }
   };
 
@@ -86,20 +94,33 @@ function Customers() {
       </div>
 
       {/* Users Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredUsers.map(user => (
-          <div
-            key={user.id}
-            className="border p-4 rounded shadow hover:bg-gray-100 cursor-pointer"
-            onClick={() => handleUserClick(user.id)}
-          >
-            <h2 className="text-xl font-semibold">{user.name}</h2>
-            <p>Email: {user.email}</p>
-            <p>Created At: {new Date(user.createdAt).toLocaleDateString()}</p>
-            <p>Status: {user.isBlocked ? 'Blocked' : 'Active'}</p>
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <ThreeDots
+            visible={true}
+            height="80"
+            width="80"
+            color="#275C9E"
+            radius="9"
+            ariaLabel="three-dots-loading"
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredUsers.map(user => (
+            <div
+              key={user.id}
+              className="border p-4 rounded shadow hover:bg-gray-100 cursor-pointer"
+              onClick={() => handleUserClick(user.id)}
+            >
+              <h2 className="text-xl font-semibold">{user.name}</h2>
+              <p>Email: {user.email}</p>
+              <p>Created At: {new Date(user.createdAt).toLocaleDateString()}</p>
+              <p>Status: {user.isBlocked ? 'Blocked' : 'Active'}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* User Details Dialog */}
       {isDialogOpen && (
@@ -124,15 +145,16 @@ function Customers() {
                   <button
                     onClick={() => setConfirmAction({ isOpen: true, userId: selectedUser.id, action: 'block' })}
                     className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                    disabled={selectedUser.isBlocked}
+                    disabled={selectedUser.isBlocked || actionLoading}
                   >
-                    Block User
+                    {actionLoading && confirmAction.action === 'block' ? 'Blocking...' : 'Block User'}
                   </button>
                   <button
                     onClick={() => setConfirmAction({ isOpen: true, userId: selectedUser.id, action: 'delete' })}
                     className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                    disabled={actionLoading}
                   >
-                    Delete User
+                    {actionLoading && confirmAction.action === 'delete' ? 'Deleting...' : 'Delete User'}
                   </button>
                 </div>
               </>
@@ -164,7 +186,7 @@ function Customers() {
                 onClick={handleConfirmAction}
                 className={`px-4 py-2 rounded text-white ${confirmAction.action === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-yellow-500 hover:bg-yellow-600'}`}
               >
-                Yes
+                {actionLoading ? 'Processing...' : 'Yes'}
               </button>
             </div>
           </div>

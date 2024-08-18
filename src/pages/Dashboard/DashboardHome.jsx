@@ -3,12 +3,14 @@ import { db } from '../../firebase';
 import { getAuth } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
+import { ThreeDots } from 'react-loader-spinner';
 
 const DashboardHome = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [loading, setLoading] = useState(true); // Loading state
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -17,7 +19,6 @@ const DashboardHome = () => {
       
       if (user) {
         // Check if the user is an admin
-        // You should have a field in your user document to indicate admin status
         const userDoc = doc(db, 'users', user.uid);
         const userSnapshot = await getDoc(userDoc);
         if (userSnapshot.exists()) {
@@ -58,11 +59,28 @@ const DashboardHome = () => {
           ];
           setRecentActivities(activities);
         }
+        
+        setLoading(false); // Set loading to false once data is fetched
       }
     };
 
     fetchDashboardData();
   }, [isAdmin]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <ThreeDots
+          visible={true}
+          height="80"
+          width="80"
+          color="#275C9E"
+          radius="9"
+          ariaLabel="three-dots-loading"
+        />
+      </div>
+    );
+  }
 
   return (
     <>
