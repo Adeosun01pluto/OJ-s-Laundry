@@ -1,0 +1,13 @@
+.swiper-pagination {
+    bottom: 10px !important; /* Adjust the bottom position */
+    padding-top: 50px ; /* Add horizontal padding */
+  }
+  .swiper-pagination-bullet {
+    background: #275C9E; /* Customize bullet color */
+    width: 12px; /* Adjust bullet size */
+    height: 12px; /* Adjust bullet size */
+    margin: 0 4px; /* Add spacing between bullets */
+  }
+  .swiper-pagination-bullet-active {
+    background: #275C9E; /* Customize active bullet color */
+  }
